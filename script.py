@@ -6,6 +6,10 @@ import numpy as np
 from matplotlib import pyplot
 from PyMPDATA import ScalarField, Solver, Stepper, VectorField, Options, boundary_conditions
 from open_atmos_jupyter_utils import show_plot, show_anim
+import imageio.v2 as imageio
+from scipy.signal import find_peaks
+
+
 
 def plot_preview():
     pyplot.figure(figsize=(14.5,3))
@@ -161,4 +165,91 @@ def plot(i, *, zlim=(-.1, .1)):
     cnt = pyplot.contourf(xi+.5, yi + .5, bathymetry, zdir='z', offset=zlim[0])
     pyplot.colorbar(cnt, pad=.1, aspect=10, fraction=.04, label='batymetria')
     return fig
+
+def generate_gif():
+
+    frames = []
+
+    for i in range(len(output['h'])):
+        fig = plot(i)
+
+        fig.canvas.draw()
+
+        # Pobranie obrazu z figury Matplotlib
+        frame = np.asarray(fig.canvas.buffer_rgba())[:, :, :3]
+
+        frames.append(frame.copy())
+
+        pyplot.close(fig)
+
+    # Zapis animacji
+    imageio.mimsave("animacja.gif", frames, duration=0.1, loop=0)
+
+def fin_peak(*, zeta, polar_transform):
+    polar_data = zeta[
+        polar_transform[..., 1],
+        polar_transform[..., 0]
+    ]
+
+    local_minima = []
+    for phi in range(polar_data.shape[0]):
+        profile = polar_data[phi, :]
+        valid = np.isfinite(profile)
+        minima, properties = find_peaks(
+            profile,
+            prominence=0.001
+        )
+
+        local_minima.append(minima)
+    return local_minima
+
+def circularity(*, peaks_map, wave_n=0):
+    r = np.array([
+        p[wave_n] if len(p) > wave_n else np.nan
+        for p in peaks_map
+    ])
+    r = r[np.isfinite(r)]
+
+    mean_r = np.median(r)
+    std_r = np.std(r)
+
+    circularity = 1 - std_r / mean_r
+
+    return circularity
+
+def analyze():
+    x0 = cols / 2
+    y0 = rows / 2
+    dphi = 1  # stopnie
+    dr = 1    # jednostka siatki
+
+    n_phi = 360
+    n_r = 50
+
+    phi = np.deg2rad(np.arange(n_phi) * dphi)
+    r = np.arange(n_r) * dr
+
+    PHI, R = np.meshgrid(phi, r, indexing='ij')
+    X = np.rint(x0 + R * np.cos(PHI)).astype(int)
+    Y = np.rint(y0 + R * np.sin(PHI)).astype(int)
+    polar_transform = np.stack((X, Y), axis=-1)
+
+    zeta = output['h'][70] - bathymetry
+    peaks = fin_peak(zeta=zeta, polar_transform=polar_transform)
+
+    circularity(peaks_map=peaks)
+
+    plt.imshow(zeta)
+    plt.show()
+
+    plt.figure(figsize=(12, 5))
+
+    for i in range(max(len(p) for p in peaks)):
+        plt.plot(
+            np.arange(360),
+            [p[i] if len(p) > i else np.nan for p in peaks],
+            label=f'Pik {i}'
+        )
+    plt.legend()
+    plt.show()
 

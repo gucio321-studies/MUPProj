@@ -91,28 +91,12 @@ output = simulate()
 ### Wizualizacja
 
 ```{python}
-import imageio.v2 as imageio
-import os
-
-frames = []
-
-for i in range(len(output['h'])):
-    fig = plot(i)
-
-    fig.canvas.draw()
-
-    # Pobranie obrazu z figury Matplotlib
-    frame = np.asarray(fig.canvas.buffer_rgba())[:, :, :3]
-
-    frames.append(frame.copy())
-
-    pyplot.close(fig)
-
-# Zapis animacji
-imageio.mimsave("animacja.gif", frames, duration=0.1, loop=0)
+#| echo: false
+#generate_gif()
 ```
 
 # analiza
 
 ```{python}
+analyze()
 ```
