@@ -21,7 +21,7 @@ jobs:
           tinytex: true
       - name: Build PDF
         run: |
-          uv run quarto render index.qmd
+          uv run quarto render mup.qmd
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
