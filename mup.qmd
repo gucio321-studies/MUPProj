@@ -20,6 +20,7 @@ execute: # let python kernel stay alive for 30 minutes
 ## Modelowanie układów przepływowych - rozszerzenie solwera równań płytkiej wody o profil dna
 
 ```{python}
+#| echo: false
 import sys
 import os
 os.environ['NUMBA_THREADING_LAYER'] = 'workqueue'
@@ -147,13 +148,29 @@ class ShallowWaterEquationsIntegratorWithBathymetry:
 ### Definicja dna
 
 ```{python}
-bathymetry = np.ones((40,40))
+bathymetry = np.ones((100,100))
 xi, yi = np.indices(bathymetry.shape)
-bathymetry -= 1*xi/bathymetry.shape[1]
+
+radius = 20
+radius2 = 30
+#bathymetry -= 1*xi/bathymetry.shape[1]
+rows, cols = bathymetry.shape
+
+y, x = np.ogrid[:rows, :cols]
+
+x0 = cols / 2
+y0 = rows / 2
+
+distance = np.sqrt((x - x0)**2 + (y - y0)**2)
+
+change = np.clip((radius2 - distance) / (radius2 - radius), 0, 1)
+
+bathymetry -= change*.9
 
 h_initial = bathymetry.copy() - np.where(bathymetry != 0, .05, 0)
 h_initial[0:4, 0:4] += .025
 
+pyplot.imshow(bathymetry)
 ```
 
 ### Przykładowa symulacja
@@ -165,9 +182,9 @@ output = ShallowWaterEquationsIntegratorWithBathymetry(
     h_initial=h_initial, bathymetry=bathymetry
 )(
   g=g,
-  nt=127,
+  nt=250,
   dt_over_dxy=(.25, .25),
-  outfreq=5,
+  outfreq=3,
 )
 ```
 
@@ -180,8 +197,8 @@ def plot(i, *, zlim=(-.1, .1)):
     fig, ax = pyplot.subplots(subplot_kw={"projection": "3d"})
     pyplot.gca().plot_wireframe(
         xi+.5, yi+.5,
-#        output['h'][i] - bathymetry,
-        output['vh'][i],
+        output['h'][i] - bathymetry,
+#        output['vh'][i],
         color='blue', linewidth=.5
     )
     ax.set_zlim(zlim)
@@ -200,5 +217,23 @@ def plot(i, *, zlim=(-.1, .1)):
 ```
 
 ```{python}
-show_anim(plot, range(len(output['h'])))
+import imageio.v2 as imageio
+import os
+
+frames = []
+
+for i in range(len(output['h'])):
+    fig = plot(i)
+
+    fig.canvas.draw()
+
+    # Pobranie obrazu z figury Matplotlib
+    frame = np.asarray(fig.canvas.buffer_rgba())[:, :, :3]
+
+    frames.append(frame.copy())
+
+    pyplot.close(fig)
+
+# Zapis animacji
+imageio.mimsave("animacja.gif", frames, duration=0.1, loop=0)
 ```
