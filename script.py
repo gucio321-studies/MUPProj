@@ -254,7 +254,7 @@ def circularity(*, peaks_map, wave_n=0):
     return circularity
 
 
-def analyze_frame_circularity(*, frame):
+def analyze_frame_circularity(*, frame, wave_ns=[0]):
     x0 = cols / 2
     y0 = rows / 2
     dphi = 1  # stopnie
@@ -274,16 +274,12 @@ def analyze_frame_circularity(*, frame):
     zeta = output["h"][frame] - bathymetry
     peaks = fin_peak(zeta=zeta, polar_transform=polar_transform)
 
-    return circularity(peaks_map=peaks)
+    return [circularity(peaks_map=peaks, wave_n=wn) for wn in wave_ns]
 
 
 def analyze():
-    circ = [analyze_frame_circularity(frame=f) for f in range(len(output["h"]))]
-    plt.imshow(output["h"][10] - bathymetry)
-    plt.show()
-    plt.figure()
-    plt.plot(circ)
-    plt.show()
+    circ = [analyze_frame_circularity(frame=f, wave_ns=[0,1,2]) for f in range(len(output["h"]))]
+    return np.array(circ).T
 
 
 if __name__ == "__main__":

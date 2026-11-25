@@ -88,15 +88,75 @@ Kształt dna zbiornika
 output = simulate()
 ```
 
-### Wizualizacja
+```{python}
+#| echo: false
+#generate_gif() # TODO
+```
+
+# Analiza kolistości fal
+
+## Metodyka
+
+W celu wyznaczenia kolistości fali w danej klatce zastosowano następujący algorytm:
+
+- do mapy voxeli we współrzędnych kartezjańskich wygenerowano odpowiadającą im mapę współrzędnych biegunowych $(\phi, r) \to (x, y)$.
+- z każdej klatki wycięto koło o promieniu $\frac{X}{2} = 50$ konwertując je na współrzędne biegunowe
+- otrzymano listę funkcji wysokości fali w zależności od odległości od centrum $\zeta_\phi(R)$
+- dla każdej funkcji $\zeta_\phi$ wyznaczono położenia maksimów lokalnych $\Zeta_\phi(n)$.
+- Wyznaczono parametr kolistości $C_t(n)$ jako $C_t(n) = \frac{\bar{r_n}}{\sigma_{r_n}} * A_n$, gdzie:
+    * $C_t(n)$ - kolistość n-tej fali licząc od środka układu w danej klatce
+    * $\bar{r_n}$ - średnia (po wszystkich $\phi$) odległość grzbietu fali od środka układu.
+    * $\sigma_{r_n}$ - odchylenie standardowe odległości fali od środka układu
+    * $A_n$ - procent występowania danego piku w kącie $\phi$
+
+
+## Wyniki
 
 ```{python}
 #| echo: false
-#generate_gif()
+circ = analyze()
 ```
 
-# analiza
 
 ```{python}
-analyze()
+#| echo: false
+#| fig-cap: Zależność kolistości fali od klatki symulacji
+plt.figure(figsize=(7,2))
+i=1
+for c in circ:
+    plt.plot(c, label=f"grzbiet fali {i}")
+    i+=1
+plt.xlabel("Klatka symulacji [dt]")
+plt.ylabel("Kolistość C")
+plt.legend()
+plt.grid()
 ```
+
+:::{#fig-results layout-ncol=3}
+
+```{python}
+#| echo: false
+#| fig-cap: Klatka symulacji o największej kolistości
+plt.figure(figsize=(5,5))
+plt.imshow(output['h'][np.argmax(circ[0])] - bathymetry)
+plt.show()
+```
+
+```{python}
+#| echo: false
+#| fig-cap: Klatka symulacji o największej kolistości dla drugiego grzbietu fali
+plt.figure(figsize=(5,5))
+plt.imshow(output['h'][np.argmax(circ[1])] - bathymetry)
+plt.show()
+```
+
+```{python}
+#| echo: false
+#| fig-cap: Klatka symulacji o największej kolistości dla trzeciego grzbietu fali
+plt.figure(figsize=(5,5))
+plt.imshow(output['h'][np.argmax(circ[1])] - bathymetry)
+plt.show()
+```
+
+Klatki o najwyższym współczynniku kolistości $C$ dla danych grzbietów fali.
+:::
