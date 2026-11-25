@@ -30,7 +30,11 @@ from PyMPDATA import ScalarField, Solver, Stepper, VectorField, Options, boundar
 from open_atmos_jupyter_utils import show_plot, show_anim
 ```
 
-### Układ, symbole i równania
+# Cel projektu
+
+Celem projektu jest analiza kształtu fali płaskiej na powierzchnii wody przy brzegu wyspy w kształcie ściętego stożka [@fig-wyspa].
+
+# Układ, symbole i równania
 
 ```{python}
 #| echo: false
@@ -76,9 +80,8 @@ $$
 \end{cases}
 $$
 
-### solwer "hello-world" bazujący na PyMPDATA
-
 ```{python}
+#| echo: false
 class ShallowWaterEquationsIntegratorWithBathymetry:
     def __init__(self, *, h_initial: np.ndarray, bathymetry: np.ndarray, options: Options = None):
         options = options or Options(nonoscillatory=True, infinite_gauge=True)
@@ -145,9 +148,10 @@ class ShallowWaterEquationsIntegratorWithBathymetry:
         return output
 ```
 
-### Definicja dna
+# Definicja dna
 
 ```{python}
+#| echo: false
 bathymetry = np.ones((100,100))
 xi, yi = np.indices(bathymetry.shape)
 
@@ -169,13 +173,44 @@ bathymetry -= change*.9
 
 h_initial = bathymetry.copy() - np.where(bathymetry != 0, .05, 0)
 h_initial[0:4, 0:4] += .025
+```
 
+Zdefiniowano dno zbiornika o wymiarach `{python} f'{rows} x {cols}'` jako wyspę (ścięty stożek) o promieniu górnej podstawy (wystającej ponad wodę) `{python} radius` i dolnej `{python} radius2`
+Wizualizację dna przedstawia [@fig-bot]
+
+:::{#fig-bot layout-ncol=2}
+
+```{python}
+#| echo: false
+#| fig-cap: rzut z góry
+#| label: fig-wyspa
 pyplot.imshow(bathymetry)
 ```
 
-### Przykładowa symulacja
+```{python}
+#| echo: false
+#| fig-cap: Rzut 3D
+#| label: fig-3d
+import matplotlib.pyplot as plt
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+
+ax.plot_surface(x, y, bathymetry, cmap='viridis')
+
+# Labels
+ax.set_xlabel('X')
+ax.set_ylabel('Y')
+ax.set_zlabel('Z')
+ax.invert_zaxis()
+
+plt.show()
+```
+
+Kształt dna zbiornika
+:::
 
 ```{python}
+#| echo: false
 from scipy.constants import g
 
 output = ShallowWaterEquationsIntegratorWithBathymetry(
@@ -191,6 +226,7 @@ output = ShallowWaterEquationsIntegratorWithBathymetry(
 ### Wizualizacja
 
 ```{python}
+#| echo: false
 def plot(i, *, zlim=(-.1, .1)):
     """ plots psi as a wireframe with contoured and coloured bathymetry below """
     xi, yi = np.indices(output['h'][i].shape)
