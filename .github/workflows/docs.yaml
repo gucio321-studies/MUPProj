@@ -2,8 +2,6 @@ name: Thesis PDF Generation
 on:
   workflow_dispatch:
   push:
-    paths:
-      - 'docs/**'
 
 jobs:
   Compile:
